@@ -1,7 +1,6 @@
 const { useCallback } = React;
 
 const AUTH_SERVICE_BASE_URL = 'http://localhost:8080';
-const CONTEST_SERVICE_BASE_URL = 'http://localhost:8081';
 
 const useAuthFetch = () => {
     const getAccessToken = () => localStorage.getItem('accessToken');
@@ -44,7 +43,7 @@ const useAuthFetch = () => {
     const authFetch = useCallback(async (endpoint, options = {}) => {
         let accessToken = getAccessToken();
 
-        const fullUrl = `${CONTEST_SERVICE_BASE_URL}${endpoint}`;
+        const fullUrl = `${endpoint}`;
 
         const fetchOptions = {
             ...options,

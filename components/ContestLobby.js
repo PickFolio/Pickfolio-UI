@@ -2,7 +2,6 @@ const { useState, useEffect, useCallback } = React;
 
 const CONTEST_API_URL = 'http://localhost:8081/api/contests';
 
-// --- NEW COMPONENT: A modal for joining a private contest with a code ---
 const JoinPrivateContestModal = ({ authFetch, onClose, onContestJoined }) => {
     const [inviteCode, setInviteCode] = useState('');
     const [error, setError] = useState('');
@@ -14,7 +13,7 @@ const JoinPrivateContestModal = ({ authFetch, onClose, onContestJoined }) => {
         setIsLoading(true);
         try {
             // This calls the new backend endpoint for joining with a code
-            const { error: apiError } = await authFetch('/api/contests/join-by-code', {
+            const { error: apiError } = await authFetch(CONTEST_API_URL + '/api/contests/join-by-code', {
                 method: 'POST',
                 body: JSON.stringify({ inviteCode }),
             });
@@ -95,7 +94,7 @@ const CreateContestModal = ({ authFetch, onClose, onContestCreated }) => {
                 virtualBudget: parseFloat(formData.virtualBudget),
                 maxParticipants: parseInt(formData.maxParticipants, 10),
             };
-            const { data, error: apiError } = await authFetch('/api/contests/create', {
+            const { data, error: apiError } = await authFetch(CONTEST_API_URL + '/api/contests/create', {
                 method: 'POST',
                 body: JSON.stringify(payload),
             });
@@ -135,19 +134,40 @@ const CreateContestModal = ({ authFetch, onClose, onContestCreated }) => {
     }
 
     return (
-         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
             <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
                 <h2 className="text-xl font-bold mb-4 text-white">Create New Contest</h2>
                 {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* The form inputs (name, private toggle, etc.) are unchanged */}
-                    <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Contest Name" className="w-full bg-gray-700 text-white rounded p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required />
+                    <div>
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-300">Contest Name</label>
+                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className="mt-1 w-full bg-gray-700 text-white rounded p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required />
+                    </div>
                     <div className="flex items-center">
                         <input type="checkbox" name="isPrivate" id="isPrivate" checked={formData.isPrivate} onChange={handleChange} className="h-4 w-4 text-indigo-600 bg-gray-700 border-gray-600 rounded focus:ring-indigo-500"/>
                         <label htmlFor="isPrivate" className="ml-2 block text-sm text-gray-300">Private Contest</label>
                     </div>
-                    {/* Other fields: startTime, endTime, virtualBudget, maxParticipants */}
-                    <div className="flex justify-end space-x-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="startTime" className="block text-sm font-medium text-gray-300">Start Time</label>
+                            <input type="datetime-local" name="startTime" id="startTime" value={formData.startTime} onChange={handleChange} className="mt-1 w-full bg-gray-700 text-white rounded p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required />
+                        </div>
+                        <div>
+                            <label htmlFor="endTime" className="block text-sm font-medium text-gray-300">End Time</label>
+                            <input type="datetime-local" name="endTime" id="endTime" value={formData.endTime} onChange={handleChange} className="mt-1 w-full bg-gray-700 text-white rounded p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required />
+                        </div>
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="virtualBudget" className="block text-sm font-medium text-gray-300">Virtual Budget (₹)</label>
+                            <input type="number" name="virtualBudget" id="virtualBudget" value={formData.virtualBudget} onChange={handleChange} className="mt-1 w-full bg-gray-700 text-white rounded p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required min="1" />
+                        </div>
+                        <div>
+                            <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-300">Max Participants</label>
+                            <input type="number" name="maxParticipants" id="maxParticipants" value={formData.maxParticipants} onChange={handleChange} className="mt-1 w-full bg-gray-700 text-white rounded p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required min="2" />
+                        </div>
+                    </div>
+                    <div className="flex justify-end space-x-2 pt-4">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-500">Cancel</button>
                         <button type="submit" disabled={isLoading} className="px-4 py-2 bg-indigo-600 rounded hover:bg-indigo-500 disabled:bg-indigo-800">
                             {isLoading ? 'Creating...' : 'Create'}
@@ -155,7 +175,7 @@ const CreateContestModal = ({ authFetch, onClose, onContestCreated }) => {
                     </div>
                 </form>
             </div>
-         </div>
+        </div>
     );
 };
 
