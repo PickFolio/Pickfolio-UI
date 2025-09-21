@@ -13,7 +13,7 @@ const JoinPrivateContestModal = ({ authFetch, onClose, onContestJoined }) => {
         setIsLoading(true);
         try {
             // This calls the new backend endpoint for joining with a code
-            const { error: apiError } = await authFetch(CONTEST_API_URL + '/api/contests/join-by-code', {
+            const { error: apiError } = await authFetch(CONTEST_API_URL + '/join-by-code', {
                 method: 'POST',
                 body: JSON.stringify({ inviteCode }),
             });
@@ -94,7 +94,7 @@ const CreateContestModal = ({ authFetch, onClose, onContestCreated }) => {
                 virtualBudget: parseFloat(formData.virtualBudget),
                 maxParticipants: parseInt(formData.maxParticipants, 10),
             };
-            const { data, error: apiError } = await authFetch(CONTEST_API_URL + '/api/contests/create', {
+            const { data, error: apiError } = await authFetch(CONTEST_API_URL + '/create', {
                 method: 'POST',
                 body: JSON.stringify(payload),
             });
@@ -179,12 +179,9 @@ const CreateContestModal = ({ authFetch, onClose, onContestCreated }) => {
     );
 };
 
-// --- ENHANCED: ContestCard now has smarter logic for its buttons and info display ---
-const ContestCard = ({ contest, userId, onJoin, onView }) => {
+const ContestCard = ({ contest, userId, onJoin, onView, hasJoined }) => {
     // Determine if the current user is the creator of this contest
     const isCreator = contest.creatorId === userId;
-    // Determine if this card is in the "My Contests" list (which implies the user has joined)
-    const hasJoined = contest.hasJoined;
 
     return (
         <div className="bg-gray-800 rounded-lg p-4 flex flex-col space-y-3">
