@@ -41,11 +41,14 @@ const App = () => {
         setSelectedContestId(null);
     };
 
+    const token = localStorage.getItem('accessToken');
+    const userId = token ? JSON.parse(atob(token.split('.')[1])).sub : null;
+
     if (isLoggedIn) {
          if (selectedContestId) {
              return <ContestView contestId={selectedContestId} onBackToLobby={() => setSelectedContestId(null)} />;
          }
-        return <ContestLobby onLogout={handleLogout} onLogoutAll={handleLogoutAll} onViewContest={setSelectedContestId} />;
+        return <ContestLobby userId={userId} onLogout={handleLogout} onLogoutAll={handleLogoutAll} onViewContest={setSelectedContestId} />;
     }
 
     if (isRegistering) {

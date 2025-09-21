@@ -1,69 +1,87 @@
 const { useCallback } = React;
 
-const AUTH_API_URL = 'http://localhost:8080/api/auth';
+const AUTH_SERVICE_BASE_URL = 'http://localhost:8080';
+const CONTEST_SERVICE_BASE_URL = 'http://localhost:8081';
 
 const useAuthFetch = () => {
-    const getAuthTokens = () => JSON.parse(localStorage.getItem('authTokens'));
-    const setAuthTokens = (tokens) => localStorage.setItem('authTokens', JSON.stringify(tokens));
-    const clearAuthTokens = () => localStorage.removeItem('authTokens');
+    const getAccessToken = () => localStorage.getItem('accessToken');
+    const setAccessToken = (token) => localStorage.setItem('accessToken', token);
+    const getRefreshToken = () => localStorage.getItem('refreshToken');
 
-    const refreshToken = useCallback(async (token, deviceInfo) => {
+    const handleRefreshToken = useCallback(async () => {
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) {
+            console.error("No refresh token available.");
+            return null;
+        }
+
         try {
-            const response = await fetch(`${AUTH_API_URL}/refresh`, {
+            const response = await fetch(`${AUTH_SERVICE_BASE_URL}/api/auth/refresh`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refreshToken: token, deviceInfo: deviceInfo || "WebApp" }),
+                body: JSON.stringify({ refreshToken, deviceInfo: "WebApp" }),
             });
-            if (!response.ok) throw new Error('Refresh failed');
-            const newTokens = await response.json();
-            setAuthTokens(newTokens);
-            return newTokens.accessToken;
+
+            if (!response.ok) {
+                throw new Error('Failed to refresh token');
+            }
+
+            const data = await response.json();
+            setAccessToken(data.accessToken);
+            // Also update the refresh token in case of token rotation
+            localStorage.setItem('refreshToken', data.refreshToken);
+            return data.accessToken;
         } catch (error) {
-            console.error('Token refresh error:', error);
-            clearAuthTokens();
+            console.error('Token refresh failed:', error);
+            // Clear tokens and force re-login if refresh fails
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
             window.location.reload();
             return null;
         }
     }, []);
 
-    const authFetch = useCallback(async (url, options = {}) => {
-        let tokens = getAuthTokens();
-        if (!tokens) throw new Error('Not authenticated');
+    const authFetch = useCallback(async (endpoint, options = {}) => {
+        let accessToken = getAccessToken();
 
-        const isTokenExpired = (token) => {
-            if (!token) return true;
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                return Date.now() >= payload.exp * 1000;
-            } catch (e) { return true; }
-        };
-
-        if (isTokenExpired(tokens.accessToken)) {
-            tokens.accessToken = await refreshToken(tokens.refreshToken, "WebApp");
-            if (!tokens.accessToken) throw new Error('Session expired');
-        }
+        const fullUrl = `${CONTEST_SERVICE_BASE_URL}${endpoint}`;
 
         const fetchOptions = {
             ...options,
             headers: {
-                ...options.headers,
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${tokens.accessToken}`,
+                ...options.headers,
+                'Authorization': `Bearer ${accessToken}`,
             },
         };
 
-        const response = await fetch(url, fetchOptions);
+        let response = await fetch(fullUrl, fetchOptions);
+
+        if (response.status === 401) {
+            console.log('Access token expired. Attempting refresh...');
+            const newAccessToken = await handleRefreshToken();
+            if (newAccessToken) {
+                // Retry the request with the new token
+                fetchOptions.headers['Authorization'] = `Bearer ${newAccessToken}`;
+                response = await fetch(fullUrl, fetchOptions);
+            } else {
+                return { data: null, error: 'Your session has expired. Please log in again.' };
+            }
+        }
 
         if (!response.ok) {
-            const errorBody = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-            const errorMessage = `API call failed: ${errorBody.message || 'Unknown error'}`;
-            throw new Error(errorMessage);
+            const errorData = await response.json().catch(() => ({ message: 'An unexpected server error occurred.' }));
+            console.error("API call failed:", response.status, errorData);
+            return { data: null, error: errorData.message };
         }
-        if (response.status === 204 || response.headers.get("content-length") === "0") {
-            return null;
-        }
-        return response.json();
-    }, [refreshToken]);
+
+        // Handle successful responses that might not have a body (e.g., 204 No Content from a POST)
+        const responseText = await response.text();
+        const data = responseText ? JSON.parse(responseText) : null;
+
+        return { data, error: null };
+
+    }, [handleRefreshToken]);
 
     return authFetch;
 };
