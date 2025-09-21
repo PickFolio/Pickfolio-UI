@@ -1,5 +1,7 @@
 const { useState, useEffect, useCallback } = React;
 
+const CONTEST_API_URL = 'http://localhost:8081/api/contests';
+
 // --- NEW COMPONENT: A modal for joining a private contest with a code ---
 const JoinPrivateContestModal = ({ authFetch, onClose, onContestJoined }) => {
     const [inviteCode, setInviteCode] = useState('');
@@ -205,14 +207,14 @@ const ContestLobby = ({ userId, onLogout, onLogoutAll, onViewContest }) => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showJoinModal, setShowJoinModal] = useState(false);
 
-    // This function now fetches both lists of contests using the new backend endpoints
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         setError('');
         try {
+            // --- THIS IS THE FIX: Use the full URL ---
             const [myContestsRes, publicContestsRes] = await Promise.all([
-                authFetch('/api/contests/my-contests'),
-                authFetch('/api/contests/open-public-contests')
+                authFetch(`${CONTEST_API_URL}/my-contests`),
+                authFetch(`${CONTEST_API_URL}/open-public-contests`)
             ]);
 
             if (myContestsRes.error) throw new Error(`Failed to load your contests: ${myContestsRes.error}`);
@@ -220,7 +222,6 @@ const ContestLobby = ({ userId, onLogout, onLogoutAll, onViewContest }) => {
 
             setMyContests(myContestsRes.data || []);
 
-            // This logic prevents showing a public contest if the user is already in it
             const myContestIds = new Set((myContestsRes.data || []).map(c => c.id));
             setPublicContests((publicContestsRes.data || []).filter(c => !myContestIds.has(c.id)));
 
@@ -235,7 +236,6 @@ const ContestLobby = ({ userId, onLogout, onLogoutAll, onViewContest }) => {
         fetchData();
     }, [fetchData]);
 
-    // Handlers for closing modals and refreshing data
     const handleContestCreated = () => {
         setShowCreateModal(false);
         fetchData();
@@ -245,15 +245,15 @@ const ContestLobby = ({ userId, onLogout, onLogoutAll, onViewContest }) => {
         fetchData();
     };
 
-    // Handler for the "Join" button on public contests
     const handleJoinPublic = async (contestId) => {
         try {
-             const { error } = await authFetch('/api/contests/join', {
+             // --- THIS IS THE FIX: Use the full URL ---
+             const { error } = await authFetch(`${CONTEST_API_URL}/join`, {
                 method: 'POST',
                 body: JSON.stringify({ contestId }),
             });
             if (error) throw new Error(error);
-            fetchData(); // Refresh data to move the contest to the "My Contests" list
+            fetchData();
         } catch (err) {
             alert(`Error joining contest: ${err.message}`);
         }

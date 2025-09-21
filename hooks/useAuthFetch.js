@@ -61,7 +61,6 @@ const useAuthFetch = () => {
             console.log('Access token expired. Attempting refresh...');
             const newAccessToken = await handleRefreshToken();
             if (newAccessToken) {
-                // Retry the request with the new token
                 fetchOptions.headers['Authorization'] = `Bearer ${newAccessToken}`;
                 response = await fetch(fullUrl, fetchOptions);
             } else {
@@ -71,11 +70,10 @@ const useAuthFetch = () => {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: 'An unexpected server error occurred.' }));
-            console.error("API call failed:", response.status, errorData);
+            console.error(response.status, errorData);
             return { data: null, error: errorData.message };
         }
 
-        // Handle successful responses that might not have a body (e.g., 204 No Content from a POST)
         const responseText = await response.text();
         const data = responseText ? JSON.parse(responseText) : null;
 
@@ -85,3 +83,4 @@ const useAuthFetch = () => {
 
     return authFetch;
 };
+
