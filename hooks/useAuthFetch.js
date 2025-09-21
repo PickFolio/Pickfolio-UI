@@ -1,67 +1,68 @@
 const { useCallback } = React;
 
-const AUTH_SERVICE_BASE_URL = 'http://localhost:8080';
+const AUTH_API_URL = 'http://localhost:8080/api/auth';
 
 const useAuthFetch = () => {
-    const getAccessToken = () => localStorage.getItem('accessToken');
-    const setAccessToken = (token) => localStorage.setItem('accessToken', token);
-    const getRefreshToken = () => localStorage.getItem('refreshToken');
+    const getTokens = () => JSON.parse(localStorage.getItem('authTokens'));
+    const setTokens = (tokens) => localStorage.setItem('authTokens', JSON.stringify(tokens));
 
-    const handleRefreshToken = useCallback(async () => {
-        const refreshToken = getRefreshToken();
-        if (!refreshToken) {
+    const refreshToken = useCallback(async () => {
+        const tokens = getTokens();
+        // Check for the refreshToken property within the object
+        if (!tokens?.refreshToken) {
             console.error("No refresh token available.");
             return null;
         }
 
         try {
-            const response = await fetch(`${AUTH_SERVICE_BASE_URL}/api/auth/refresh`, {
+            const response = await fetch(`${AUTH_API_URL}/refresh`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refreshToken, deviceInfo: "WebApp" }),
+                body: JSON.stringify({
+                    refreshToken: tokens.refreshToken,
+                    deviceInfo: "WebApp"
+                }),
             });
 
             if (!response.ok) {
                 throw new Error('Failed to refresh token');
             }
 
-            const data = await response.json();
-            setAccessToken(data.accessToken);
-            // Also update the refresh token in case of token rotation
-            localStorage.setItem('refreshToken', data.refreshToken);
-            return data.accessToken;
+            const newTokens = await response.json();
+            // Save the entire new token object
+            setTokens(newTokens);
+            return newTokens.accessToken;
         } catch (error) {
             console.error('Token refresh failed:', error);
-            // Clear tokens and force re-login if refresh fails
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('authTokens');
             window.location.reload();
             return null;
         }
     }, []);
 
-    const authFetch = useCallback(async (endpoint, options = {}) => {
-        let accessToken = getAccessToken();
-
-        const fullUrl = `${endpoint}`;
+    const authFetch = useCallback(async (url, options = {}) => {
+        let tokens = getTokens();
+        if (!tokens?.accessToken) {
+            return { data: null, error: 'Not authenticated' };
+        }
 
         const fetchOptions = {
             ...options,
             headers: {
                 'Content-Type': 'application/json',
                 ...options.headers,
-                'Authorization': `Bearer ${accessToken}`,
+                'Authorization': `Bearer ${tokens.accessToken}`,
             },
         };
 
-        let response = await fetch(fullUrl, fetchOptions);
+        let response = await fetch(url, fetchOptions);
 
         if (response.status === 401) {
-            console.log('Access token expired. Attempting refresh...');
-            const newAccessToken = await handleRefreshToken();
+            console.log('Access token expired or invalid. Attempting refresh...');
+            const newAccessToken = await refreshToken();
             if (newAccessToken) {
                 fetchOptions.headers['Authorization'] = `Bearer ${newAccessToken}`;
-                response = await fetch(fullUrl, fetchOptions);
+                response = await fetch(url, fetchOptions); // Retry the request
             } else {
                 return { data: null, error: 'Your session has expired. Please log in again.' };
             }
@@ -77,8 +78,7 @@ const useAuthFetch = () => {
         const data = responseText ? JSON.parse(responseText) : null;
 
         return { data, error: null };
-
-    }, [handleRefreshToken]);
+    }, [refreshToken]);
 
     return authFetch;
 };
