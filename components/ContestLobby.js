@@ -180,27 +180,72 @@ const CreateContestModal = ({ authFetch, onClose, onContestCreated }) => {
 };
 
 const ContestCard = ({ contest, userId, onJoin, onView, hasJoined }) => {
-    // Determine if the current user is the creator of this contest
     const isCreator = contest.creatorId === userId;
 
+    // Helper function to format date and time in a user-friendly way
+    const formatDateTime = (isoString) => {
+        return new Date(isoString).toLocaleString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    };
+
+    // Helper function to format large numbers for the budget
+    const formatBudget = (value) => {
+        const num = Number(value);
+        if (num >= 10000000) return `₹${(num / 10000000).toFixed(2)} Cr`;
+        if (num >= 100000) return `₹${(num / 100000).toFixed(2)} Lac`;
+        return `₹${num.toLocaleString('en-IN')}`;
+    };
+
     return (
-        <div className="bg-gray-800 rounded-lg p-4 flex flex-col space-y-3">
+        <div className="bg-gray-800 rounded-lg p-4 flex flex-col space-y-4 shadow-lg border border-gray-700">
             <div className="flex justify-between items-start">
-                <h3 className="font-bold text-white">{contest.name}</h3>
+                <h3 className="font-bold text-white text-lg">{contest.name}</h3>
                 {contest.isPrivate && (
                     <span className="text-xs font-semibold bg-indigo-500 text-white px-2 py-1 rounded-full">Private</span>
                 )}
             </div>
-            {/* ... Other details like player count are unchanged ... */}
 
-            {/* Show invite code only to the creator of a private contest */}
+            <div className="border-t border-b border-gray-700 py-3 space-y-2">
+                <div className="flex items-center text-sm text-gray-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-teal-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M8.433 7.418c.158-.103.346-.195.574-.277a6.213 6.213 0 014.22.603l.24.129a3.028 3.028 0 011.53 2.585v1.85c0 .34-.04.67-.114.99a.99.99 0 01-.213.376l-.24.212c-.212.188-.472.333-.75.44a6.213 6.213 0 01-4.22-.603l-.24-.129a3.028 3.028 0 01-1.53-2.585v-1.85c0-.34.04-.67.114-.99a.99.99 0 01.213-.376l.24-.212z" />
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0 2a10 10 0 100-20 10 10 0 000 20z" clipRule="evenodd" />
+                    </svg>
+                    <span>Budget: <span className="font-bold text-white">{formatBudget(contest.virtualBudget)}</span></span>
+                </div>
+                <div className="flex items-center text-sm text-gray-300">
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-teal-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                    </svg>
+                    <span>Starts: <span className="font-bold text-white">{formatDateTime(contest.startTime)}</span></span>
+                </div>
+                 <div className="flex items-center text-sm text-gray-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-teal-400" viewBox="0 0 20 20" fill="currentColor">
+                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-5.707a1 1 0 00-1.414-1.414L10 14.586l-2.293-2.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3z" clipRule="evenodd" />
+                    </svg>
+                    <span>Ends: <span className="font-bold text-white">{formatDateTime(contest.endTime)}</span></span>
+                </div>
+            </div>
+
+            <div className="flex justify-between items-center text-sm text-gray-400">
+                <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
+                    <span>{contest.currentParticipants}/{contest.maxParticipants} Players</span>
+                </div>
+            </div>
+
             {contest.isPrivate && isCreator && (
                 <div className="text-xs text-center text-indigo-300 bg-gray-700 p-2 rounded">
                     Invite Code: <span className="font-mono">{contest.inviteCode}</span>
                 </div>
             )}
 
-            {/* Show a "View" button if the user has joined, otherwise a "Join" button */}
+
             {hasJoined ? (
                  <button onClick={() => onView(contest.id)} className="w-full bg-gray-600 text-white font-bold py-2 px-4 rounded hover:bg-gray-500 transition duration-300">
                     View Contest
@@ -214,7 +259,7 @@ const ContestCard = ({ contest, userId, onJoin, onView, hasJoined }) => {
     );
 };
 
-// --- REWRITTEN: The main ContestLobby component ---
+
 const ContestLobby = ({ userId, onLogout, onLogoutAll, onViewContest }) => {
     const authFetch = useAuthFetch();
     const [myContests, setMyContests] = useState([]);
