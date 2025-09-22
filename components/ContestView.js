@@ -19,25 +19,20 @@ const ContestView = ({ contestId, onBackToLobby }) => {
             setIsLoading(true);
             setError(null);
 
-            const [contestRes, portfolioRes] = await Promise.all([
-                authFetch(`${CONTEST_API_URL}/details/${contestId}`),
-                authFetch(`${CONTEST_API_URL}/${contestId}/portfolio`)
+            const [portfolioRes, leaderboardRes, contestRes] = await Promise.all([
+                authFetch(`${CONTEST_API_URL}/${contestId}/portfolio`),
+                authFetch(`${CONTEST_API_URL}/${contestId}/leaderboard`),
+                authFetch(`${CONTEST_API_URL}/details/${contestId}`)
             ]);
 
-            if (contestRes.error) throw new Error(`Failed to load contest details: ${contestRes.error}`);
             if (portfolioRes.error) throw new Error(`Failed to load portfolio: ${portfolioRes.error}`);
+            if (leaderboardRes.error) throw new Error(`Failed to load leaderboard: ${leaderboardRes.error}`);
+            if (contestRes.error) throw new Error(`Failed to load contest details: ${contestRes.error}`);
 
-            setContest(contestRes.data);
             setPortfolio(portfolioRes.data);
+            setLeaderboard(leaderboardRes.data || []);
+            setContest(contestRes.data);
 
-            // Initialize the leaderboard with the current user's data
-            // This ensures the user sees themselves immediately, even before the first WebSocket update
-            if (portfolioRes.data) {
-                setLeaderboard([{
-                    participantId: portfolioRes.data.participantId,
-                    totalPortfolioValue: portfolioRes.data.totalPortfolioValue,
-                }]);
-            }
         } catch (err) {
             setError(err.message || "Failed to load contest data. Please try again.");
             console.error(err);
