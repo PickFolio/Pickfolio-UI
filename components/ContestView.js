@@ -218,7 +218,7 @@ const Leaderboard = ({ leaderboard, currentParticipantId }) => {
                     <li key={player.participantId} className={`flex justify-between items-center p-3 rounded-lg ${player.participantId === currentParticipantId ? 'bg-teal-900/50 ring-2 ring-teal-500' : 'bg-gray-700'}`}>
                         <div className="flex items-center">
                             <span className="text-lg font-bold w-8">{index + 1}</span>
-                            <span className="font-semibold">{player.participantId === currentParticipantId ? "You" : `Player ${player.participantId.substring(0, 8)}`}</span>
+                            <span className="font-semibold">{player.participantId === currentParticipantId ? "You" : `${player.username.substring(0, 16)}`}</span>
                         </div>
                         <span className="font-bold text-lg">₹{Number(player.totalPortfolioValue).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </li>
