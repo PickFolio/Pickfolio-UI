@@ -16,5 +16,4 @@ Handler = http.server.SimpleHTTPRequestHandler
 
 with socketserver.TCPServer(("", PORT), Handler) as httpd:
     print("Serving frontend at port", PORT)
-    print("Open http://localhost:3000 in your browser.")
     httpd.serve_forever()

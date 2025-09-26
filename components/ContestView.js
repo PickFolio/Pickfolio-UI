@@ -2,8 +2,8 @@ const { useState, useEffect, useCallback } = React;
 
 // --- API and WebSocket URLs ---
 // Note the different protocols: "http://" for REST API, "ws://" for WebSocket
-const CONTEST_API_URL = 'http://localhost:8081/api/contests';
-const CONTEST_WS_URL = 'ws://localhost:8081/ws-contests';
+const CONTEST_API_URL = window.API_URLS.CONTEST_API_URL;
+const CONTEST_WS_URL = window.API_URLS.CONTEST_WS_URL;
 
 const ContestView = ({ contestId, onBackToLobby }) => {
     const [contest, setContest] = useState(null);

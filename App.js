@@ -1,6 +1,6 @@
 const { useState, useEffect } = React;
 
-const AUTH_API_URL = 'http://localhost:8080/api/auth';
+const AUTH_API_URL = window.API_URLS.AUTH_API_URL;
 
 const App = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('authTokens'));

@@ -1,6 +1,6 @@
 const { useState, useEffect, useCallback } = React;
 
-const CONTEST_API_URL = 'http://localhost:8081/api/contests';
+const CONTEST_API_URL = window.API_URLS.CONTEST_API_URL;
 
 const JoinPrivateContestModal = ({ authFetch, onClose, onContestJoined }) => {
     const [inviteCode, setInviteCode] = useState('');

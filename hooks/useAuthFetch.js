@@ -1,6 +1,6 @@
 const { useCallback } = React;
 
-const AUTH_API_URL = 'http://localhost:8080/api/auth';
+const AUTH_API_URL = window.API_URLS.AUTH_API_URL;
 
 const useAuthFetch = () => {
     const getTokens = () => JSON.parse(localStorage.getItem('authTokens'));
